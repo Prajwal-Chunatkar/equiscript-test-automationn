@@ -16,6 +16,8 @@ class UserManagement(BaseClass):
     CONFIGURATION_MANAGEMENT = (By.XPATH, "//span[text()='Configuration Management']")
     USER_MANAGEMENT_TAB = (By.XPATH, "//span[text()='User Management']")
     ADD_USER_BUTTON = (By.XPATH, "//span[contains(text(),'Add User')]/parent::button")
+    CONTINUE = (By.XPATH, "//span[text()='Continue']")
+    CONFIRM = (By.XPATH, "//span[text()='Confirm']")
     USER_ROLE = (By.ID, "addce_userRole")
     FIRST_NAME = (By.ID, "addce_firstName")
     LAST_NAME = (By.ID, "addce_lastName")
@@ -75,6 +77,7 @@ class UserManagement(BaseClass):
     ADD_NEW_USER_PAGE = (By.XPATH, "//span[text()='Add New User']")
     VIEW_OPTION = (By.XPATH, "(//table/tbody/tr/td/span)[1]")
     DOT_OPTIONS = (By.XPATH, "//table/tbody/tr[1]/td/button/span")
+    USERNAME_VALUE = (By.XPATH,"//input[@name='userName']")
 
     def edit_button(self, username):
         return self.driver.find_element(By.XPATH,
@@ -145,15 +148,19 @@ class UserManagement(BaseClass):
         self.click_dropdown(self.USER_ROLE, UserManagement.LOCATOR1, UserManagement.LOCATOR2, role)
         self.send_Keys(self.FIRST_NAME, firstname)
         self.send_Keys(self.LAST_NAME, lastname)
-        self.send_Keys(self.EMAIL_ID, email)
-        self.click_element(self.ADD_USER_BUTTON)
-        self.verify_element_present(self.SAVE_NEXT_BUTTON, 30)
-        time.sleep(.1)
-        self.java_script_click(self.SAVE_NEXT_BUTTON)
         time.sleep(2)
-        self.click_element(self.CONFIRM_BUTTON)
+        self.send_Keys(self.EMAIL_ID, email)
+        username = self.get_attribute_value(self.USERNAME_VALUE,"value")
+        self.click_element(self.CONTINUE)
+        time.sleep(5)
+        self.click_element(self.CONFIRM)
+        # self.click_element(self.ADD_USER_BUTTON)
+        # self.verify_element_present(self.SAVE_NEXT_BUTTON, 30)
+        # time.sleep(.1)
+        # self.java_script_click(self.SAVE_NEXT_BUTTON)
         text = self.get_text(self.USER_ADDED_SUCCESSFULLY)
         assert text == 'New User is successfully added!'
+        # self.click_element(self.CONFIRM_BUTTON)
         time.sleep(2)
         self.verify_element_present(self.GO_TO_USER_LIST, 20)
         self.click_element(self.GO_TO_USER_LIST)
@@ -161,6 +168,8 @@ class UserManagement(BaseClass):
         print("email:" + email)
         logs.info("email:" + email)
         login_page.user_logout()
+        # self.driver.close()
+        self.close_childwindow()
         reset_password_link = self.read_email_mailinator(email, LoginPage.TOTAL_ROWS, 1, 1, LoginPage.MAIL_SINGLE_ROW,
                                                          LoginPage.MAIL_SINGLE_COLUMN,
                                                          emailNotification.reset_password_sub)
@@ -178,6 +187,7 @@ class UserManagement(BaseClass):
                 time.sleep(1)
                 self.driver.switch_to.window(parentWindow)
                 time.sleep(1)
+        return username
 
     def search_new_user(self, username, email, userRole):
         log = self.get_logger()

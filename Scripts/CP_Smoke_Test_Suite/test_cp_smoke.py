@@ -11,44 +11,69 @@ rnd = str(int(round(time.time())))
 email = 'testsmokeuser' + rnd + '@mailinator.com'
 user_name = 'testsmokeuser' + rnd
 
-@pytest.mark.usefixtures('setup')
-class Test_Smoke_CP(BaseClass):
 
+class TestSmokeCP(BaseClass):
 
-    @pytest.mark.run(order=1)
+    # def __init__(self,driver):
+    #     self.driver = driver
+
+    # @pytest.mark.run(order=1)
+    @pytest.mark.smoke
     def test_login(self,setup):
         login_page = LoginPage(self.driver)
-        login_page.user_login(loginData.username, loginData.password)
+        login_page.user_login(loginData.username, loginData.password, loginData.usernameMailinator)
 
-    @pytest.mark.run(order=2)
-    @pytest.mark.depends(on=['test_login'])
-    def test_verify_left_side_menu(self):
+    @pytest.mark.smoke
+    def test_verify_dashboard_screen(self):
+        login_page = LoginPage(self.driver)
         home_page = HomePage(self.driver)
-        home_page.left_side_menu()
+        login_page.user_login(loginData.username, loginData.password, loginData.usernameMailinator)
+        login_page.switchto_homepage()
+        home_page.dashboard_elements()
 
-    @pytest.mark.run(order=3)
-    @pytest.mark.depends(on=['test_login'])
+    @pytest.mark.smoke
+    def test_verify_CE_screen(self):
+        login_page = LoginPage(self.driver)
+        home_page = HomePage(self.driver)
+        login_page.user_login(loginData.username, loginData.password, loginData.usernameMailinator)
+        login_page.switchto_homepage()
+        home_page.navigate_to_module('Configuration')
+        home_page.verify_ce_page()
+
+
+
+
+    @pytest.mark.smoke
     def test_navigate_to_add_user_page(self):
+        login_page = LoginPage(self.driver)
+        login_page.user_login(loginData.username, loginData.password, loginData.usernameMailinator)
+        login_page.switchto_homepage()
         user_management = UserManagement(self.driver)
         user_management.user_navigation()
 
-    @pytest.mark.run(order=4)
-    @pytest.mark.depends(on=['test_login'])
-    def test_add_new_user(self):
+    # @pytest.mark.run(order=4)
+    # @pytest.mark.depends(on=['test_login'])
+    @pytest.mark.smoke
+    def test_add_superadmin_user(self):
         login_page = LoginPage(self.driver)
+        login_page.user_login(loginData.username, loginData.password, loginData.usernameMailinator)
+        login_page.switchto_homepage()
         user_management = UserManagement(self.driver)
-        user_management.add_user(userManagement.super_admin, "firstnametest",
+        username = user_management.add_user(userManagement.super_admin, "firstnametest",
                                  "lastnametest", email, resetPassword.favourite_destination,
                                  resetPassword.born_city, 'Hyderabad', "Hyderabad", "Password!1")
-        login_page.user_login(email, "Password!1")
-        login_page.user_logout()
+        login_page.newuser_login_and_logout(username, "Password!1", email)
 
-    @pytest.mark.run(order=5)
-    @pytest.mark.depends(on=['test_login'])
+
+    # @pytest.mark.run(order=5)
+    # @pytest.mark.depends(on=['test_login'])
+    @pytest.mark.smoke
     def test_verify_view_option_in_user_management_table(self):
         login_page = LoginPage(self.driver)
+        login_page.user_login(loginData.username, loginData.password,loginData.usernameMailinator)
+        login_page.switchto_homepage()
         user_management = UserManagement(self.driver)
-        login_page.user_login(loginData.username, loginData.password)
+        login_page.user_login(loginData.username, loginData.password, loginData.usernameMailinator)
         self.verify_element_present(user_management.USER_MANAGEMENT_TAB, 20)
         self.click_element(user_management.USER_MANAGEMENT_TAB)
         self.verify_element_present(user_management.VIEW_OPTION, 20)
@@ -97,3 +122,5 @@ class Test_Smoke_CP(BaseClass):
         assert self.element_visible(covered_entity.ELIGIBILITY_RULE) == True
         assert self.element_visible(covered_entity.ADMIN_FEE) == True
         login_page.user_logout()
+
+

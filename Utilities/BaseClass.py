@@ -170,6 +170,13 @@ class BaseClass:
         element = wait.until(EC.presence_of_element_located(locator))
         element.click()
 
+    def click_element_by_moduleName(self, modulename):
+        wait = WebDriverWait(self.driver, 10)
+        xpath = f"//span[text()='{modulename}']"
+        locator = (By.XPATH,xpath)
+        element = wait.until(EC.presence_of_element_located(locator))
+        element.click()
+
     def element_visible(self, locator):
         wait = WebDriverWait(self.driver, 10)
         element = wait.until(EC.presence_of_element_located(locator))
@@ -181,6 +188,11 @@ class BaseClass:
         element = wait.until(EC.presence_of_element_located(locator))
         element.clear()
         element.send_keys(value)
+
+    def get_attribute_value(self,locator,attribute):
+        wait = WebDriverWait(self.driver,30)
+        element = wait.until(EC.presence_of_element_located(locator))
+        return element.get_attribute(attribute)
 
     def scroll_into_view(self, locator):
         # Run JavaScript to scroll until the element is in view
@@ -414,3 +426,14 @@ class BaseClass:
         time.sleep(2)
         actions.send_keys(Keys.ENTER).perform()
         time.sleep(1)
+
+    def close_childwindow(self):
+        parentWindow = self.driver.current_window_handle
+        time.sleep(.2)
+        childWindow = self.driver.window_handles
+        for child in childWindow:
+            if child != parentWindow:
+                self.driver.switch_to.window(child)
+                self.driver.close()
+                time.sleep(2)
+        self.driver.switch_to.window(parentWindow)

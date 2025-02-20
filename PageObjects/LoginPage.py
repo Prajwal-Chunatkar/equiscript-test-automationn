@@ -1,6 +1,4 @@
 import time
-import os
-from selenium.webdriver import Keys, ActionChains
 from selenium.webdriver.common.by import By
 from Utilities.BaseClass import BaseClass
 
@@ -31,7 +29,9 @@ class LoginPage(BaseClass):
     MAIL_SINGLE_COLUMN = "]/td"
     SINGLE_ROW = "//table/tbody/tr["
     SINGLE_COLUMN = "]/td"
-    LOGOUT_DOWN_ARROW = (By.CSS_SELECTOR, ".ant-avatar.ant-avatar-circle.css-1gaypts")
+    # LOGOUT_DOWN_ARROW = (By.CSS_SELECTOR, ".ant-avatar ant-avatar-circle css-qzstoi")
+    # LOGOUT_DOWN_ARROW = (By.CLASS_NAME, ".ant-avatar ant-avatar-circle css-qzstoi")
+    LOGOUT_DOWN_ARROW = (By.XPATH, "//a[contains(@class,'dropdown')]")
     LOGOUT = (By.XPATH, "//span[text()='Logout']")
     DOT_BUTTON = (
         By.XPATH,
@@ -59,11 +59,11 @@ class LoginPage(BaseClass):
         self.send_Keys(self.PASSWORD, password)
         self.click_element(self.LOGIN_BUTTON)
 
-    def user_login(self, username, password):
+    def user_login(self, username, password, otpmailid):
         title = self.get_title()
-        assert title == "Your Company | CP-Framework"
-        self.verify_element_present(self.CONTRACT_PHARMACY, 30)
-        self.element_visible(self.STARTER_KIT)
+        assert title.lower() == "PATIENT FIRST".lower()
+        # self.verify_element_present(self.CONTRACT_PHARMACY, 30)//these element not present on dashboard
+        # self.element_visible(self.STARTER_KIT)
         self.element_visible(self.WELCOME)
         self.element_visible(self.SIGN_IN_LABEL)
         self.element_visible(self.LOGIN_BUTTON)
@@ -73,9 +73,9 @@ class LoginPage(BaseClass):
         self.verify_element_present(self.SENT_SUCCESSFULLY_TEXT, 60)
         text = self.get_text(self.SENT_SUCCESSFULLY_TEXT)
         assert text == "A One Time Password has been sent to your registered Email ID"
-        self.verify_element_present(self.OTP_TEXT, 30)
+        # self.verify_element_present(self.OTP_TEXT, 30)//need to modify this logic
         otp = []
-        otp = self.read_email_mailinator(username, self.TOTAL_ROWS, 1, 1, LoginPage.MAIL_SINGLE_ROW,
+        otp = self.read_email_mailinator(otpmailid, self.TOTAL_ROWS, 1, 1, LoginPage.MAIL_SINGLE_ROW,
                                          LoginPage.MAIL_SINGLE_COLUMN, "Your login verification - One "
                                                                        "Time Password (OTP)")
         print(otp)
@@ -90,11 +90,55 @@ class LoginPage(BaseClass):
         time.sleep(2)
 
     def user_logout(self):
-        time.sleep(.5)
+        time.sleep(2)
         self.verify_element_present(self.LOGOUT_DOWN_ARROW, 30)
         # self.move_to_Element(self.LOGOUT_DOWN_ARROW)
-        # self.click_element(self.LOGOUT_DOWN_ARROW)
+        self.click_element(self.LOGOUT_DOWN_ARROW)
         self.move_to_Element(self.LOGOUT_DOWN_ARROW)
         time.sleep(.5)
         self.click_element(self.LOGOUT)
         self.verify_element_present(self.USERNAME, 30)
+
+    def newuser_login_and_logout(self, username, password, otpmailid):
+        title = self.get_title()
+        assert title.lower() == "PATIENT FIRST".lower()
+        # self.verify_element_present(self.CONTRACT_PHARMACY, 30)//these element not present on dashboard
+        # self.element_visible(self.STARTER_KIT)
+        self.element_visible(self.WELCOME)
+        self.element_visible(self.SIGN_IN_LABEL)
+        self.element_visible(self.LOGIN_BUTTON)
+        self.send_Keys(self.USERNAME, username)
+        self.send_Keys(self.PASSWORD, password)
+        self.click_element(self.LOGIN_BUTTON)
+        self.verify_element_present(self.SENT_SUCCESSFULLY_TEXT, 60)
+        text = self.get_text(self.SENT_SUCCESSFULLY_TEXT)
+        assert text == "A One Time Password has been sent to your registered Email ID"
+        # self.verify_element_present(self.OTP_TEXT, 30)//need to modify this logic
+        otp = []
+        otp = self.read_email_mailinator(otpmailid, self.TOTAL_ROWS, 1, 1, LoginPage.MAIL_SINGLE_ROW,
+                                         LoginPage.MAIL_SINGLE_COLUMN, "Your login verification - One "
+                                                                       "Time Password (OTP)")
+        parentWindow = self.driver.current_window_handle
+        print(otp)
+        if text == 'A One Time Password has been sent to your registered Email ID':
+            self.driver.find_element(By.XPATH, "//div/child::input[1]").send_keys(otp[0])
+            self.driver.find_element(By.XPATH, "//div/child::input[2]").send_keys(otp[1])
+            self.driver.find_element(By.XPATH, "//div/child::input[3]").send_keys(otp[2])
+            self.driver.find_element(By.XPATH, "//div/child::input[4]").send_keys(otp[3])
+            self.driver.find_element(By.XPATH, "//div/child::input[5]").send_keys(otp[4])
+            self.driver.find_element(By.XPATH, "//div/child::input[6]").send_keys(otp[5])
+        self.click_element(self.VERIFY_BUTTON)
+        time.sleep(2)
+        childWindow = self.driver.window_handles
+        for child in childWindow:
+            if child != parentWindow:
+                self.driver.switch_to.window(child)
+        self.user_logout()
+
+    def switchto_homepage(self):
+        parentWindow = self.driver.current_window_handle
+        time.sleep(.2)
+        childWindow = self.driver.window_handles
+        for child in childWindow:
+            if child != parentWindow:
+                self.driver.switch_to.window(child)
