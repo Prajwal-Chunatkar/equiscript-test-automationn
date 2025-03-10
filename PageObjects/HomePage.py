@@ -23,7 +23,12 @@ class Configuration(object):
     COVERED_ENTITY_NAME = (By.XPATH,"//span[text()='Covered Entity Name']")
     EXPORT = (By.XPATH,"//span[text()=' Export']")
 
-
+class Claims(object):
+    ADD_SEARCH = (By.XPATH,"//span[text()=' Add Search Criteria']")
+    CLAIMS_MANAGEMENT = "//span[text()='Claims Management']"
+    FIELD_NAME = (By.XPATH,"//span[text()='Field Name']")
+    OPERATOR = (By.XPATH,"//span[text()='Operator']")
+    VALUE = (By.XPATH,"//span[text()='Operator']")
 
 
 class HomePage(BaseClass):
@@ -45,6 +50,7 @@ class HomePage(BaseClass):
         assert not (False in checklist)," element not present on Dashboard screen"
 
     def navigate_to_module(self,module):
+        self.click_element_by_moduleName('Dashboard')
         self.click_element_by_moduleName(module)
 
     def verify_ce_page(self):
@@ -53,6 +59,22 @@ class HomePage(BaseClass):
                      self.element_visible(Configuration.COVERED_ENTITY_NAME),
                      self.element_visible(Configuration.EXPORT)]
         assert not (False in checklist), " element not present on Covered Entity screen"
+
+    # def verify_claims_management_page(self):
+    #     elements = self.get_webelements(Claims.CLAIMS_MANAGEMENT)
+    #     checklist = ['claims' in self.driver.current_url, len(elements) > 1,
+    #                  self.element_visible(Claims.ADD_SEARCH)]
+    #     assert not (False in checklist), " element not present on Claim Management screen"
+
+    def add_search_crieteria(self):
+        self.click_element(Claims.ADD_SEARCH)
+        checklist = [self.element_visible(Claims.FIELD_NAME), self.element_visible(Claims.OPERATOR),
+                     self.element_visible(Claims.VALUE)]
+        assert not (False in checklist), " element not present on add search crieteria screen"
+
+
+
+
 
 
 

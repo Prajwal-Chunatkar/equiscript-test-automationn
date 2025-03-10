@@ -1,6 +1,7 @@
 class loginData:
     usernameMailinator = "suad@mailinator.com"
-    username = "sa27028"
+    username = "sa27028"  #QA
+    # username = "sk19388"  #UAT
     # password = "Password!1"
     password = "Prime@12345"
     url = "https://cpframework-qa.excellarate.com/login"

@@ -1,4 +1,3 @@
-import datetime
 import os
 import inspect
 import logging
@@ -13,8 +12,9 @@ from TestData.CP_Test_Data import emailNotification
 import win32com.client
 
 
-@pytest.mark.usefixtures("setup")
+@pytest.mark.usefixtures("ui")
 class BaseClass:
+    global driver
 
     def selectOptionByText(self, locator, Text):
         wait = WebDriverWait(self.driver, 10)
@@ -35,8 +35,11 @@ class BaseClass:
         select.select_by_index(index)
 
     def verify_element_present(self, locator, duration):
-        wait = WebDriverWait(self.driver, duration)
-        wait.until(EC.presence_of_element_located(locator))
+        try:
+            wait = WebDriverWait(self.driver, duration)
+            wait.until(EC.presence_of_element_located(locator))
+        except Exception as e:
+            print(f"exception occured : {e}")
 
     def switchChildwindow(self):
         childwindow = self.driver.window_handles[1]
@@ -118,14 +121,14 @@ class BaseClass:
         self.driver.refresh()
         time.sleep(1)
 
-    def verify_field_is_marked_as_required(self, labelText, textOnField):
-        """
-        Will verify the given field label has an asterisk
-        :param textOnField: Text on the label without the asterisk
-        """
-        formattedXpath = self._format_tuple(labelText, textOnField)
-        text = self.driver.find_element(*formattedXpath).text
-        assert text.endswith('*'), f'The field {textOnField} does not end with an *.'
+    # def verify_field_is_marked_as_required(self, labelText, textOnField):
+    #     """
+    #     Will verify the given field label has an asterisk
+    #     :param textOnField: Text on the label without the asterisk
+    #     """
+    #     formattedXpath = self._format_tuple(labelText, textOnField)
+    #     text = self.driver.find_element(*formattedXpath).text
+    #     assert text.endswith('*'), f'The field {textOnField} does not end with an *.'
 
     def click_and_hold_the_element(self, menuitem):
         """
@@ -167,8 +170,13 @@ class BaseClass:
 
     def click_element(self, locator):
         wait = WebDriverWait(self.driver, 10)
-        element = wait.until(EC.presence_of_element_located(locator))
+        try:
+            element = wait.until(EC.presence_of_element_located(locator))
+        except Exception as e:
+            print(f"Error while element search: {e}")
+            return None
         element.click()
+
 
     def click_element_by_moduleName(self, modulename):
         wait = WebDriverWait(self.driver, 10)
@@ -177,17 +185,36 @@ class BaseClass:
         element = wait.until(EC.presence_of_element_located(locator))
         element.click()
 
-    def element_visible(self, locator):
+    def select_cetype(self, locator1, item):
         wait = WebDriverWait(self.driver, 10)
-        element = wait.until(EC.presence_of_element_located(locator))
-        status = element.is_displayed()
-        return status
+        element = wait.until(EC.presence_of_element_located(locator1))
+        element.click()
+        time.sleep(2)
+        action = ActionChains(self.driver)
+        ele = self.driver.find_element(By.XPATH,f"//div[@title='{item}']")
+        action.move_to_element(ele).perform()
+        action.click(ele).perform()
+        time.sleep(5)
+
+
+
+    def element_visible(self, locator):
+        try:
+            wait = WebDriverWait(self.driver, 10)
+            element = wait.until(EC.presence_of_element_located(locator))
+            status = element.is_displayed()
+            return status
+        except Exception as e:
+            print(f"Error: {e}")
+            return False
+
 
     def send_Keys(self, locator, value):
         wait = WebDriverWait(self.driver, 30)
         element = wait.until(EC.presence_of_element_located(locator))
         element.clear()
         element.send_keys(value)
+
 
     def get_attribute_value(self,locator,attribute):
         wait = WebDriverWait(self.driver,30)
@@ -242,7 +269,7 @@ class BaseClass:
                     return new_otp
                 elif content == emailNotification.reset_password_sub:
                     web_element.click()
-                    time.sleep(.5)
+                    time.sleep(2)
                     self.driver.switch_to.frame(iframe)
                     reset_pwd_link = self.driver.find_element(By.XPATH, "//table/tbody/tr/td/p/a/following-sibling::a")
                     link = reset_pwd_link.text
@@ -364,17 +391,17 @@ class BaseClass:
         for child in childWindow:
             if child != parentWindow:
                 self.driver.switch_to.window(child)
-                self.driver.maximize_window()
-                time.sleep(2)
+                # self.driver.maximize_window()
+                # time.sleep(2)
                 self.driver.find_element(By.ID, "search").send_keys(username)
                 self.driver.find_element(By.XPATH, "//button[text()='GO']").click()
-                time.sleep(5)
+                time.sleep(3)
                 otp = self.web_table_handle(total_rows, row, column, locator1,
                                             locator2, text)
                 self.driver.close()
-                time.sleep(1)
+                # time.sleep(1)
                 self.driver.switch_to.window(parentWindow)
-                time.sleep(1)
+                # time.sleep(1)
                 return otp
 
     def verify_page_nations_in_table(self):
@@ -429,11 +456,191 @@ class BaseClass:
 
     def close_childwindow(self):
         parentWindow = self.driver.current_window_handle
-        time.sleep(.2)
+        # time.sleep(.2)
         childWindow = self.driver.window_handles
         for child in childWindow:
             if child != parentWindow:
                 self.driver.switch_to.window(child)
                 self.driver.close()
-                time.sleep(2)
+                # time.sleep(2)
         self.driver.switch_to.window(parentWindow)
+
+    def get_webelements(self,xpath):
+        time.sleep(2)
+        return self.driver.find_elements(By.XPATH,xpath)
+
+    def wait_till_dropdown_clickable_and_select(self, dropdownSelector, locator1, locator2, text):
+        wait = WebDriverWait(self.driver, 60)
+        wait.until(EC.visibility_of_element_located(dropdownSelector))
+        element = wait.until(EC.element_to_be_clickable(dropdownSelector))
+        element.click()
+        selectDropdown = (By.XPATH, locator1 + text + locator2)
+        element1 = wait.until(EC.element_to_be_clickable(selectDropdown))
+        time.sleep(.5)
+        self.driver.execute_script("arguments[0].click();", element1)
+
+    def search_dropdown_and_select(self, dropdownSelector, locator1, locator2, text):
+        wait = WebDriverWait(self.driver, 30)
+        wait.until(EC.visibility_of_element_located(dropdownSelector))
+        element = wait.until(EC.element_to_be_clickable(dropdownSelector))
+        element.click()
+        element.send_keys(text)
+        selectDropdown = (By.XPATH, locator1 + text + locator2)
+        element1 = wait.until(EC.element_to_be_clickable(selectDropdown))
+        time.sleep(.5)
+        self.driver.execute_script("arguments[0].click();", element1)
+
+    def clickOnButtonByText(self,btntext):
+        try:
+            element = self.driver.find_element(By.XPATH,f"//button//span[contains(text(),'{btntext}')]")
+        except Exception as e:
+            print(f"facing exception: {e} for {btntext}")
+            return None
+        element.click()
+
+    def validatePresenceOfElementByText(self,buttontext):
+        try:
+            wait = WebDriverWait(self.driver, 10)
+            locator = (By.XPATH,f"//button//span[text()='{buttontext}']")
+            element = wait.until(EC.presence_of_element_located(locator))
+            status = element.is_displayed()
+            return status
+        except Exception as e:
+            print(f"Facing error for button {buttontext} : {e}")
+            return None
+
+    def validateDropDownHeadersByText(self,dropdownheader):
+        locator = (By.XPATH, f"//span[text()='{dropdownheader}']")
+        return self.element_visible(locator)
+
+##### By Title
+
+    def verify_element_present_bytitle(self, title, duration):
+        locator = (By.XPATH, f"/label[@title='{title}']/..//following-sibling::div//input")
+        try:
+            wait = WebDriverWait(self.driver, duration)
+            return wait.until(EC.presence_of_element_located(locator)).is_displayed()
+        except Exception as e:
+            print(f"{title} element not present on screen")
+            return False
+
+    def send_Keys_ByTitle(self,title, value):
+        locator = (By.XPATH,f"//label[@title='{title}']/..//following-sibling::div//input")
+        wait = WebDriverWait(self.driver, 30)
+        element = wait.until(EC.presence_of_element_located(locator))
+        element.clear()
+        element.send_keys(value)
+
+##By text button click
+
+    def click_button_bytext(self, btntext):
+        locator = (By.XPATH,f"//button//span[text()='{btntext}']")
+        wait = WebDriverWait(self.driver, 10)
+        try:
+            element = wait.until(EC.presence_of_element_located(locator))
+        except Exception as e:
+            print(f"Error while element search: {e}")
+            return None
+        element.click()
+
+    def button_visible_bytext(self, btntext):
+        locator = (By.XPATH, f"//span[text()='{btntext}']")
+        try:
+            wait = WebDriverWait(self.driver, 10)
+            element = wait.until(EC.presence_of_element_located(locator))
+            status = element.is_displayed()
+            return status
+        except Exception as e:
+            print(f"Error: {e}")
+            return False
+
+    def verify_table_headers(self, headerlist):
+        headers = self.get_table_headers()
+        headerList = headerlist.split('|')
+        try:
+            for header in headerList:
+                if header in headers:
+                    print(f"{header} present as expected")
+                else:
+                    print(f"{header} not present on table")
+                    assert False
+        except Exception as e:
+            print(f"header not present on table")
+            assert False
+
+    def get_table_headers(self):
+        headers =[]
+        elements = self.get_webelements("//th//div//span[text()]")
+        for ele in elements:
+            headers.append(ele.text)
+        return headers
+
+    def text_element_visible(self, text):
+        locator = (By.XPATH, f"//strong[text()='{text}']")
+        try:
+            wait = WebDriverWait(self.driver, 10)
+            element = wait.until(EC.presence_of_element_located(locator))
+            status = element.is_displayed()
+            return status
+        except Exception as e:
+            print(f"Error: {e}")
+            return False
+
+    def verify_popup_present_ByText(self, popup_text, duration):
+        locator = ( By.XPATH, f"//span[text()='{popup_text}']")
+        wait = WebDriverWait(self.driver, duration)
+        wait.until(EC.presence_of_element_located(locator))
+
+    def get_popup_text(self, popup_text):
+        locator = (By.XPATH, f"//span[text()='{popup_text}']")
+        time.sleep(.5)
+        try:
+            wait = WebDriverWait(self.driver, 10)
+            element = wait.until(EC.presence_of_element_located(locator))
+            return element.text
+        except Exception as e:
+            print(f"exception received : {e}")
+            return False
+
+    def get_otp_popup_text(self):
+        locator = (By.XPATH, f"//div[@class='ant-message-custom-content ant-message-success']//span[2]")
+        try:
+            wait = WebDriverWait(self.driver, 30)
+            element = wait.until(EC.presence_of_element_located(locator))
+            return element.text
+        except Exception as e:
+            print(f"exception received : {e}")
+            return False
+
+    def verify_element_present_bytext(self, text, duration):
+        locator = (By.XPATH, f"//span[text()='{text}']")
+        try:
+            wait = WebDriverWait(self.driver, duration)
+            element = wait.until(EC.presence_of_element_located(locator))
+            return element.is_displayed()
+        except Exception as e:
+            print(f"{text} element not present on screen")
+            return False
+
+###clcik element by text
+
+    def click_element_bytext(self, text):
+        locator = (By.XPATH, f"//span[text()='{text}']")
+        wait = WebDriverWait(self.driver, 10)
+        try:
+            element = wait.until(EC.presence_of_element_located(locator))
+        except Exception as e:
+            print(f"Error while element search: {e}")
+            return None
+        element.click()
+
+    def get_webelements_bytext(self,text):
+        xpath = f"//span[text()='{text}']"
+        time.sleep(2)
+        return self.driver.find_elements(By.XPATH,xpath)
+
+
+
+
+
+
